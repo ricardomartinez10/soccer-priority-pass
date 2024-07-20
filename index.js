@@ -37,7 +37,17 @@ const dataBase = [
     {
         name:'william valencia',
         assists: 10,
-        team:'orange'
+        team:'gray'
+    },
+    {
+        name: 'henry ordoñez',
+        assists: 5,
+        team: 'orange'
+    },
+    {
+        name: 'santiago martinez',
+        assists: 7,
+        team: 'gray'
     }
 ]
 
@@ -73,14 +83,62 @@ function getPriorityPlayers() {
 }
 
 /**
+ * Generates list of players according to the team
+ * @param {string} team 
+ * @param {array} playerList 
+ * @returns 
+ */
+function generatePlayersByTeam(team, playerList) {
+    return playerList
+        .filter(player => player.team === team);
+}
+
+/**
+ * Formats player list as a message text
+ * @param {array} players 
+ * @returns 
+ */
+function messageTextFormat(players) {
+    return players.map((player, index) => {
+        const name = player['Posición'] !== 'Arquero' ?
+            `A${index + 1}. ${player['Nombre']}`:
+            `${player['Nombre']}`;
+        return `${name} \n`
+    }).toString().replaceAll(',','');
+}
+
+/**
+ * Function to transform text name to lower case and remove accent marks
+ * @param {string} name 
+ * @returns 
+ */
+function normalizeName(name) {
+    return name.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function filterPlayers(player) {
+    return player['Posición'] !== 'Arquero';
+}
+
+function filterKeeper(player) {
+    return player['Posición'] === 'Arquero';
+}
+
+/**
  * Return player list in text message format
  * @param {array} playerList 
  * @returns 
  */
 function buildList(playerList) {
-    const teamGrey = generatePlayerByTeam('gray', playerList).slice(0,NUMER_OF_PLAYERS);
-    const teamOrange = generatePlayerByTeam('orange', playerList).slice(0,NUMER_OF_PLAYERS);
-    const waitListPlayers = generatePlayerByTeam('gray', playerList).slice(NUMER_OF_PLAYERS).concat(generatePlayerByTeam('orange', playerList).slice(NUMER_OF_PLAYERS));
+    const teamGray = generatePlayersByTeam('gray', playerList);
+    const keeperGray = teamGray.filter(filterKeeper).slice(0,1);
+    const playersGray = teamGray.filter(filterPlayers).slice(0,NUMER_OF_PLAYERS);
+
+    const teamOrange = generatePlayersByTeam('orange', playerList);
+    const keeperOrange = teamOrange.filter(filterKeeper).slice(0,1);
+    const playersOrange = teamOrange.filter(filterPlayers).slice(0,NUMER_OF_PLAYERS);
+
+    const waitListPlayers = generatePlayersByTeam('gray', playerList).slice(NUMER_OF_PLAYERS).concat(generatePlayersByTeam('orange', playerList).slice(NUMER_OF_PLAYERS));
 
     const list = `
 Fútbol próximo Jueves ⚽
@@ -94,47 +152,17 @@ Enviar dinero al Nequi de William Gio Valencia y anotarse en la lista con el emo
 Código QR en la foto de perfil o enviar a 318 8990695
 
 Equipo gris:
-${messageTextFormat(teamGrey)}
+Arquero: ${messageTextFormat(keeperGray)}
+${messageTextFormat(playersGray)}
 
 Equipo naranja:
-${messageTextFormat(teamOrange)}
+Arquero: ${messageTextFormat(keeperOrange)}
+${messageTextFormat(playersOrange)}
 
 En espera:
 ${messageTextFormat(waitListPlayers)}
     `
     return list;
 }
-
-/**
- * Generates list of players according to the team
- * @param {string} team 
- * @param {array} playerList 
- * @returns 
- */
-function generatePlayerByTeam(team, playerList) {
-    return playerList
-        .filter(player => player.team === team);
-}
-
-/**
- * Formats player list as a message text
- * @param {array} players 
- * @returns 
- */
-function messageTextFormat(players) {
-    return players.map((player, index) => {
-        return `A${index + 1}. ${player['Nombre']} \n`
-    }).toString().replaceAll(',','');
-}
-
-/**
- * Function to transform text name to lower case and remove accent marks
- * @param {string} name 
- * @returns 
- */
-function normalizeName(name) {
-    return name.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
-}
-
 
 console.log(buildList(getPriorityPlayers()));
