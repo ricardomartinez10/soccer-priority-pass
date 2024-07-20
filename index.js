@@ -5,28 +5,39 @@ const sheetName = workbook.SheetNames[0];
 const worksheet = workbook.Sheets[sheetName];
 // Transform excel file to json
 const inputData = xlsx.utils.sheet_to_json(worksheet);
+const NUMER_OF_PLAYERS = 3;
 
 // Internal data base
 const dataBase = [
     {
-        name: 'Ricardo Martinez',
+        name: 'ricardo martinez',
+        team: 'gray',
         assists: 5
     },
     {
-        name: 'Marcel',
+        name: 'marcel sandoval',
+        team: 'gray',
         assists: 1
     },
     {
-        name: 'David Alzate',
+        name: 'david alzate',
+        team: 'gray',
         assists: 7
     },
     {
-        name: 'Luis Carlos',
-        assists: 3
+        name: 'luis carlos',
+        assists: 3,
+        team: 'gray'
     },
     {
-        name: 'Yeison Meza',
-        assists: 8
+        name: 'yeison meza',
+        assists: 8,
+        team: 'orange'
+    },
+    {
+        name:'william valencia',
+        assists: 10,
+        team:'orange'
     }
 ]
 
@@ -36,19 +47,26 @@ const dataBase = [
  *
  *  1. For each inputPlayer search the database index player accoring to the name, then map the object
  *  by adding the assist number from database.
- *  2. Filter the array according the confirm state (Yes / No)
- *  3. Sort the list of players according to the number of assists.
+ *  2. Sort the list of players according to the number of assists.
  * 
  * @returns array of priority players
  */
 function getPriorityPlayers() {
         const priorityPlayers = inputData
-            .map((player) => {
-                const playerIndex = dataBase.findIndex(booPlayer => booPlayer.name === player['Nombre']);
+            .map((player, index) => {
+                const playerIndex = dataBase.findIndex(booPlayer => booPlayer.name === normalizeName(player['Nombre']));
+                
+                player['assists'] = playerIndex !== -1 ?
+                    dataBase[playerIndex].assists :
+                    0;
+                player['team'] = playerIndex !== -1 ?
+                    dataBase[playerIndex].team :
+                    index % 2 === 0 ?
+                        'gray' :
+                        'orange';
 
-                return {...player, assists: dataBase[playerIndex].assists}
+                return player;
             })
-            .filter(player => player['Confirmo'] === 'Si')
             .sort((a,b) => b.assists - a.assists);
 
         return priorityPlayers;
@@ -60,10 +78,9 @@ function getPriorityPlayers() {
  * @returns 
  */
 function buildList(playerList) {
-    const players = playerList
-        .map((player, index) => {
-            return `A${index}. ${player['Nombre']} \n`
-        }).toString().replaceAll(',','');
+    const teamGrey = generatePlayerByTeam('gray', playerList).slice(0,NUMER_OF_PLAYERS);
+    const teamOrange = generatePlayerByTeam('orange', playerList).slice(0,NUMER_OF_PLAYERS);
+    const waitListPlayers = generatePlayerByTeam('gray', playerList).slice(NUMER_OF_PLAYERS).concat(generatePlayerByTeam('orange', playerList).slice(NUMER_OF_PLAYERS));
 
     const list = `
 Fútbol próximo Jueves ⚽
@@ -76,11 +93,48 @@ Enviar dinero al Nequi de William Gio Valencia y anotarse en la lista con el emo
 
 Código QR en la foto de perfil o enviar a 318 8990695
 
-${players} 
+Equipo gris:
+${messageTextFormat(teamGrey)}
+
+Equipo naranja:
+${messageTextFormat(teamOrange)}
+
+En espera:
+${messageTextFormat(waitListPlayers)}
     `
     return list;
 }
 
+/**
+ * Generates list of players according to the team
+ * @param {string} team 
+ * @param {array} playerList 
+ * @returns 
+ */
+function generatePlayerByTeam(team, playerList) {
+    return playerList
+        .filter(player => player.team === team);
+}
+
+/**
+ * Formats player list as a message text
+ * @param {array} players 
+ * @returns 
+ */
+function messageTextFormat(players) {
+    return players.map((player, index) => {
+        return `A${index + 1}. ${player['Nombre']} \n`
+    }).toString().replaceAll(',','');
+}
+
+/**
+ * Function to transform text name to lower case and remove accent marks
+ * @param {string} name 
+ * @returns 
+ */
+function normalizeName(name) {
+    return name.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
 
 console.log(buildList(getPriorityPlayers()));
-console.log(getPriorityPlayers());
